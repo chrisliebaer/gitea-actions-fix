@@ -1,0 +1,31 @@
+name: "Setup Gitea actions"
+description: "Gitea action that fixes some issues with using common GitHub Actions inside Gitea."
+
+inputs:
+  token:
+    description: |
+      The token to use for the action.
+      Overriding the default is usually required, since the Gitea access token is too limited for most actions.
+    required: true
+    default: ${{ github.token }}
+  server_url:
+    description: |
+      The URL of the Gitea server.
+    required: true
+    default: ${{ github.server_url }}
+  report_config_on_error:
+    description: |
+      Whether to print the full git configuration at the end of the pipeline, if an error occurred.
+      This is useful for debugging, if other actions have made destructive changes to the git configuration, causing the pipeline to fail.
+    required: true
+    default: "false"
+  debug_git:
+    description: |
+      Sets both `GIT_TRACE` and `GIT_CURL_VERBOSE` to `1`, to enable verbose more verbose output from git.
+    required: false
+    default: "false"
+
+runs:
+  using: "node20"
+  main: "tools/main.js"
+  post: "tools/post.js"

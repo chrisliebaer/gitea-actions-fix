@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+
+# This script is added to the PATH and named "git" in order to intercept all git commands and modify the setup from the checkout action
+
+# if we see this variable, we messed up and are calling ourselves recursively
+if [ -n "$GIT_INTERCEPTOR" ]; then
+	echo "Error: Recursive call to git interceptor"
+	exit 1
+fi
+
+echo "Intercepted git command: $@" >> /tmp/git_interceptor.log
+
+# if first argument is not "config"-command, we are not interested in it
+args=( "$@" )
+if [ "$1" = "config" ]; then
+
+	# iterate over all arguments and look for one that ends with ".extraheader"
+	counter=1
+	while [[ $counter -lt ${#args[@]} ]]; do
+		arg="${args[$counter]}"
+
+		case "$arg" in *".extraheader")
+			# ideally we would simply drop this call entirely, but the checkout action is writing a dummy and replaces it with the actual value later
+			# so instead, we modify the value to something nonsensical to prevent git from using it, but allowing checkout to replace the placeholder
+			# this makes both sides happy and unfortunately makes us very sad
+			# see https://github.com/actions/checkout/blob/cbb722410c2e876e24abbe8de2cc27693e501dcb/src/git-auth-helper.ts#L275-L319
+
+			# keep .extraheader key, but replace domain
+			args[$counter]="http.https://dummy.extraheader"
+
+			echo "Replaced git config argument: $arg" >> /tmp/git_interceptor.log
+			;;
+		esac
+
+		((counter++))
+	done
+fi
+
+# locate actual git binary by using second result of which
+GIT_BIN="$(which -a git | head -n 2 | tail -n 1)"
+GIT_INTERCEPTOR=1 exec "$GIT_BIN" "${args[@]}"
