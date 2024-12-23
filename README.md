@@ -23,7 +23,7 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
       - uses: actions/checkout@vXX
         with:
-          token: ${{ secrets.ACCESS_TOKEN }}
+          # token: ${{ secrets.ACCESS_TOKEN }} you dont need this, gitea-actions-fix configures the credential helper
           submodules: recursive
           lfs: true
       - name: Most perfect build steps
